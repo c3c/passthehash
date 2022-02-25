@@ -9,6 +9,8 @@ Work in progress.. I intend to add at least `pth-rpcclient` here as well.
 
 ## pth-curl
 
+Download x86-64 build: [pth-curl](https://github.com/c3c/passthehash/raw/main/builds/pth-curl)
+
 Usage:
 ```
 ./pth-curl -u username:LMLMLMLMLMLMLMLMLMLMLMLMLMLMLMLM:NTNTNTNTNTNTNTNTNTNTNTNTNTNTNTN http://intranet.corp
