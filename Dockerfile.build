@@ -1,0 +1,40 @@
+FROM muslcc/x86_64:x86_64-linux-musl
+RUN apk update && apk add --no-cache make libtool perl patch
+
+RUN mkdir -p /work/
+
+# from https://github.com/haowen-xu/docker-static-cpp-build/blob/master/Dockerfile#L18
+
+ENV OPENSSL_VERSION=1.1.1
+RUN wget -O /tmp/openssl-${OPENSSL_VERSION}.tar.gz https://www.openssl.org/source/openssl-${OPENSSL_VERSION}.tar.gz && \
+    cd /tmp && \
+    tar xzvf /tmp/openssl-${OPENSSL_VERSION}.tar.gz && \
+    rm /tmp/openssl-${OPENSSL_VERSION}.tar.gz && \
+    cd /tmp/openssl-${OPENSSL_VERSION} && \
+    ./Configure --prefix=/opt/openssl -static --static no-shared no-async no-hw no-zlib no-pic no-dso \
+                no-engine no-threads linux-x86_64 && \
+    make && \
+    make install && \
+    cd /tmp && \
+    rm -rf /tmp/openssl-${OPENSSL_VERSION}
+
+ENV CURL_VERSION=7.81.0
+ENV PKG_CONFIG="pkg-config --static"
+ENV CFLAGS=-static
+ENV CPPFLAGS=-static
+ENV LDFLAGS=-static
+
+RUN wget -O /tmp/curl-${CURL_VERSION}.tar.bz2 https://curl.se/download/curl-${CURL_VERSION}.tar.bz2 && \
+    cd /tmp/ && \
+    tar xvf /tmp/curl-${CURL_VERSION}.tar.bz2 && \
+    rm /tmp/curl-${CURL_VERSION}.tar.bz2
+
+COPY curl-pth-ntlm.patch /tmp/curl-${CURL_VERSION}
+
+RUN cd /tmp/curl-${CURL_VERSION} && \
+    patch -p1 < curl-pth-ntlm.patch && \
+    ./configure --with-openssl=/opt/openssl --disable-shared --enable-static --disable-manual --enable-ntlm && \
+    make V=1 -j 3 LDFLAGS="-all-static -L/opt/openssl/lib" && \
+    cp src/curl /work/
+
+RUN strip /work/curl
